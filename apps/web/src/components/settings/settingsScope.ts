@@ -1,5 +1,7 @@
 import type { EnvironmentId } from "@t3tools/contracts";
+import { resolveScratchProjectScopeKey } from "@t3tools/client-runtime/state/project-grouping";
 
+import type { ProjectGroupingSettings } from "../../logicalProject";
 import type {
   SidebarProjectGroupMember,
   SidebarProjectSnapshot,
@@ -52,6 +54,31 @@ export function validateSettingsScopeSearch(raw: Record<string, unknown>): Setti
     ...(machine === undefined ? {} : { machine }),
     ...(checkout === undefined ? {} : { checkout }),
   };
+}
+
+/** A link to one scratch folder opens the shared No project group. */
+export function resolveSettingsProjectSearch(
+  search: SettingsScopeSearch,
+  groups: readonly SidebarProjectSnapshot[],
+  settings: ProjectGroupingSettings,
+): SettingsScopeSearch {
+  const project = search.project;
+  if (project === undefined || groups.some((group) => group.projectKey === project)) {
+    return search;
+  }
+  const resolved = resolveScratchProjectScopeKey(
+    project,
+    groups.flatMap((group) => group.memberProjects),
+    settings,
+  );
+  if (
+    resolved === null ||
+    resolved === project ||
+    !groups.some((group) => group.projectKey === resolved)
+  ) {
+    return search;
+  }
+  return { ...search, project: resolved };
 }
 
 /** An unavailable selection never broadens a subsequent write. */

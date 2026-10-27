@@ -5,11 +5,17 @@ import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { createContext, type ReactNode, useContext } from "react";
 
+import { useClientSettings } from "../../hooks/useSettings";
+import { selectProjectGroupingSettings } from "../../logicalProject";
 import { useEnvironments, usePrimaryEnvironmentId } from "../../state/environments";
 import { getProjectFileQueryAtom, optimisticFileAtom } from "../files/projectFilesQueryState";
 import { useSettingsProjectGroups } from "./useSettingsProjectGroups";
 import { resolveScopedSettingsTargets, selectScopedSettingsEnvironments } from "./scopedSettings";
-import { resolveSettingsScope, type SettingsScopeSearch } from "./settingsScope";
+import {
+  resolveSettingsProjectSearch,
+  resolveSettingsScope,
+  type SettingsScopeSearch,
+} from "./settingsScope";
 import { selectSingleEnvironmentScope } from "./settingsScopeAxis";
 
 type ProjectFileMember = readonly [
@@ -58,16 +64,18 @@ function useMemberProjectFiles(scope: ReturnType<typeof resolveSettingsScope>) {
 
 function useResolvedSettingsScope(rawSearch: SettingsScopeSearch, singleEnvironment: boolean) {
   const groups = useSettingsProjectGroups();
+  const groupingSettings = useClientSettings(selectProjectGroupingSettings);
   const { environments: availableEnvironments } = useEnvironments();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
+  const projectSearch = resolveSettingsProjectSearch(rawSearch, groups, groupingSettings);
   const search = singleEnvironment
     ? selectSingleEnvironmentScope(
-        rawSearch,
-        resolveSettingsScope(rawSearch, groups, availableEnvironments),
+        projectSearch,
+        resolveSettingsScope(projectSearch, groups, availableEnvironments),
         availableEnvironments,
         primaryEnvironmentId,
       )
-    : rawSearch;
+    : projectSearch;
   const scope = resolveSettingsScope(search, groups, availableEnvironments);
   const projectFiles = useMemberProjectFiles(scope);
   const selected = selectScopedSettingsEnvironments(

@@ -1,8 +1,10 @@
 import { EnvironmentId, ProjectId, ProviderInstanceId } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
+import { resolveSettingsProjectSearch } from "./components/settings/settingsScope";
 import { deriveLogicalProjectKeyFromSettings } from "./logicalProject";
 import {
+  buildSettingsProjectSnapshots,
   buildSidebarProjectPickerEntries,
   buildSidebarProjectSnapshots,
   resolveSidebarProjectScopeKey,
@@ -44,7 +46,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 }
 
 describe("environment grouping", () => {
-  it("opens physical scratch settings from the merged filter, including a remote thread target", () => {
+  it("groups No project across machines in settings", () => {
     const local = makeProject({
       title: "No project",
       workspaceRoot: "/local/scratch",
@@ -57,29 +59,43 @@ describe("environment grouping", () => {
       workspaceRoot: "/remote/scratch",
       isScratch: true,
     });
+    const ordinary = makeProject({
+      id: ProjectId.make("ordinary"),
+      title: "No project",
+      workspaceRoot: "/ordinary",
+    });
     const input = {
-      projects: [local, remote],
+      projects: [local, remote, ordinary],
       settings: defaultGroupingSettings,
       primaryEnvironmentId,
       resolveEnvironmentLabel: () => null,
     };
-    const filters = buildSidebarProjectSnapshots({ ...input, groupScratchProjects: true });
-    const settingsGroups = buildSidebarProjectSnapshots(input);
-    expect(filters).toHaveLength(1);
-    expect(settingsGroups).toHaveLength(2);
-    expect(settingsGroups.map((group) => group.memberProjectRefs)).toEqual([
-      [{ environmentId: local.environmentId, projectId: local.id }],
-      [{ environmentId: remote.environmentId, projectId: remote.id }],
+    const settingsGroups = buildSettingsProjectSnapshots(input);
+    const scratch = settingsGroups.filter((group) => group.isScratch);
+    expect(scratch).toHaveLength(1);
+    expect(scratch[0]?.displayName).toBe("No project");
+    expect(scratch[0]?.memberProjectRefs).toEqual([
+      { environmentId: local.environmentId, projectId: local.id },
+      { environmentId: remote.environmentId, projectId: remote.id },
     ]);
-    expect(getSidebarProjectSettingsKey(filters[0]!, defaultGroupingSettings, input.projects)).toBe(
-      settingsGroups[0]?.projectKey,
-    );
+    expect(settingsGroups.filter((group) => !group.isScratch).map((group) => group.id)).toEqual([
+      ordinary.id,
+    ]);
+    const sidebar = buildSidebarProjectSnapshots({ ...input, groupScratchProjects: true });
     expect(
-      getSidebarProjectSettingsKey(filters[0]!, defaultGroupingSettings, input.projects, {
-        environmentId: remote.environmentId,
-        projectId: remote.id,
-      }),
-    ).toBe(settingsGroups[1]?.projectKey);
+      resolveSettingsProjectSearch(
+        {
+          project: getSidebarProjectSettingsKey(
+            sidebar.find((group) => group.isScratch)!,
+            defaultGroupingSettings,
+            input.projects,
+            { environmentId: remote.environmentId, projectId: remote.id },
+          ),
+        },
+        settingsGroups,
+        defaultGroupingSettings,
+      ),
+    ).toEqual({ project: scratch[0]?.projectKey });
   });
 
   it.each(["repository", "repository_path"] as const)(
