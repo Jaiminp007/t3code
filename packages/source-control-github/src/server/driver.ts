@@ -7,16 +7,17 @@ import * as Layer from "effect/Layer";
 
 import { definition } from "../shared/definition.ts";
 
+import * as GitHubHttpSocket from "./gitHubHttpSocket.ts";
 import * as GitHubMediaFetch from "./gitHubMediaFetch.ts";
 import * as GitHubPullRequestApi from "./GitHubPullRequestApi.ts";
 import * as GitHubPullRequestProvider from "./GitHubPullRequestProvider.ts";
 import * as GitHubRest from "./GitHubRest.ts";
 import * as GitHubSourceControlProvider from "./GitHubSourceControlProvider.ts";
 
-// `GitHubRest.layerWithDependencies` carries the quota reserve every GitHub reader shares, so it
-// must be built once; the driver is.
+// Built once so every GitHub reader shares the quota reserve and gh's `http_unix_socket`.
 const services = GitHubPullRequestApi.layer.pipe(
   Layer.provideMerge(GitHubRest.layerWithDependencies),
+  Layer.provideMerge(GitHubHttpSocket.layer),
 );
 
 const makeInstance = Effect.all({
