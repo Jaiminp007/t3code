@@ -1,7 +1,7 @@
 import type { EnvironmentId } from "@t3tools/contracts";
-import { resolveScratchProjectScopeKey } from "@t3tools/client-runtime/state/project-grouping";
-
 import type { ProjectGroupingSettings } from "@t3tools/client-runtime/state/project-grouping";
+
+import { resolveSidebarProjectScopeKey } from "../../sidebarProjectGrouping";
 import type {
   SidebarProjectGroupMember,
   SidebarProjectSnapshot,
@@ -62,23 +62,12 @@ export function resolveSettingsProjectSearch(
   groups: readonly SidebarProjectSnapshot[],
   settings: ProjectGroupingSettings,
 ): SettingsScopeSearch {
-  const project = search.project;
-  if (project === undefined || groups.some((group) => group.projectKey === project)) {
-    return search;
-  }
-  const resolved = resolveScratchProjectScopeKey(
-    project,
-    groups.flatMap((group) => group.memberProjects),
+  const project = resolveSidebarProjectScopeKey({
+    key: search.project ?? null,
+    groups,
     settings,
-  );
-  if (
-    resolved === null ||
-    resolved === project ||
-    !groups.some((group) => group.projectKey === resolved)
-  ) {
-    return search;
-  }
-  return { ...search, project: resolved };
+  });
+  return project === null || project === search.project ? search : { ...search, project };
 }
 
 /** An unavailable selection never broadens a subsequent write. */

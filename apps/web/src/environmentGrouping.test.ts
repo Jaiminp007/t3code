@@ -97,6 +97,21 @@ describe("environment grouping", () => {
         defaultGroupingSettings,
       ),
     ).toEqual({ project: scratch[0]?.projectKey });
+    const narrowed = {
+      project: getSidebarProjectSettingsKey(sidebar[0]!, defaultGroupingSettings, input.projects),
+      machine: remoteEnvironmentId,
+      checkout: scratch[0]!.memberProjects[1]!.physicalProjectKey,
+    };
+    expect(resolveSettingsProjectSearch(narrowed, settingsGroups, defaultGroupingSettings)).toEqual(
+      {
+        ...narrowed,
+        project: scratch[0]?.projectKey,
+      },
+    );
+    const missing = { project: "removed", machine: remoteEnvironmentId };
+    expect(resolveSettingsProjectSearch(missing, settingsGroups, defaultGroupingSettings)).toBe(
+      missing,
+    );
   });
 
   it.each(["repository", "repository_path"] as const)(
