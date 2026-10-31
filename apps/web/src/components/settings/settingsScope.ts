@@ -61,13 +61,24 @@ export function resolveSettingsProjectSearch(
   search: SettingsScopeSearch,
   groups: readonly SidebarProjectSnapshot[],
   settings: ProjectGroupingSettings,
+  singleEnvironment = false,
 ): SettingsScopeSearch {
   const project = resolveSidebarProjectScopeKey({
     key: search.project ?? null,
     groups,
     settings,
   });
-  return project === null || project === search.project ? search : { ...search, project };
+  if (project === null || project === search.project) return search;
+  const member = singleEnvironment
+    ? groups
+        .flatMap((group) => group.memberProjects)
+        .find((member) => member.physicalProjectKey === search.project)
+    : undefined;
+  return {
+    ...search,
+    project,
+    ...(search.machine === undefined && member ? { machine: member.environmentId } : {}),
+  };
 }
 
 /** An unavailable selection never broadens a subsequent write. */

@@ -66,7 +66,12 @@ function useResolvedSettingsScope(rawSearch: SettingsScopeSearch, singleEnvironm
   const groupingSettings = useClientSettings(selectProjectGroupingSettings);
   const { environments: availableEnvironments } = useEnvironments();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
-  const projectSearch = resolveSettingsProjectSearch(rawSearch, groups, groupingSettings);
+  const projectSearch = resolveSettingsProjectSearch(
+    rawSearch,
+    groups,
+    groupingSettings,
+    singleEnvironment,
+  );
   const search = singleEnvironment
     ? selectSingleEnvironmentScope(
         projectSearch,

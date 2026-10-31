@@ -97,6 +97,15 @@ describe("environment grouping", () => {
         defaultGroupingSettings,
       ),
     ).toEqual({ project: scratch[0]?.projectKey });
+    const remoteSearch = {
+      project: getSidebarProjectSettingsKey(sidebar[0]!, defaultGroupingSettings, input.projects, {
+        environmentId: remote.environmentId,
+        projectId: remote.id,
+      }),
+    };
+    expect(
+      resolveSettingsProjectSearch(remoteSearch, settingsGroups, defaultGroupingSettings, true),
+    ).toEqual({ project: scratch[0]?.projectKey, machine: remoteEnvironmentId });
     const narrowed = {
       project: getSidebarProjectSettingsKey(sidebar[0]!, defaultGroupingSettings, input.projects),
       machine: remoteEnvironmentId,
