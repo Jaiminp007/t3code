@@ -1,12 +1,11 @@
 import { type EnvironmentId, T3_PROJECT_FILE_NAME, type T3ProjectFile } from "@t3tools/contracts";
 import { parseT3ProjectFile } from "@t3tools/shared/t3ProjectFile";
 import { useAtomValue } from "@effect/atom-react";
-import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { createContext, type ReactNode, useContext } from "react";
 
 import { useClientSettings } from "../../hooks/useSettings";
-import { selectProjectGroupingSettings } from "../../logicalProject";
+import { selectProjectGroupingSettings } from "@t3tools/client-runtime/state/project-grouping";
 import { useEnvironments, usePrimaryEnvironmentId } from "../../state/environments";
 import { getProjectFileQueryAtom, optimisticFileAtom } from "../files/projectFilesQueryState";
 import { useSettingsProjectGroups } from "./useSettingsProjectGroups";
@@ -35,7 +34,7 @@ const memberProjectFilesAtom = Atom.family((membersKey: string) => {
       if (result.waiting) continue;
       const data =
         get(optimisticFileAtom(environmentId, workspaceRoot, T3_PROJECT_FILE_NAME))?.data ??
-        Option.getOrNull(AsyncResult.value(result));
+        AsyncResult.getOrElse(result, () => null);
       files.set(
         physicalProjectKey,
         data === null || data.exists === false || data.truncated

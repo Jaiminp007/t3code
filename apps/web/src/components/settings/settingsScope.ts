@@ -1,7 +1,7 @@
 import type { EnvironmentId } from "@t3tools/contracts";
 import { resolveScratchProjectScopeKey } from "@t3tools/client-runtime/state/project-grouping";
 
-import type { ProjectGroupingSettings } from "../../logicalProject";
+import type { ProjectGroupingSettings } from "@t3tools/client-runtime/state/project-grouping";
 import type {
   SidebarProjectGroupMember,
   SidebarProjectSnapshot,
